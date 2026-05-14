@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Desempenho da Turma</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 40px auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 15px;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .btn-voltar {
+            text-decoration: none;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-voltar:hover {
+            background-color: var(--accent-color);
+        }
+
+        .filtros {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .filtro-grupo {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--secondary-color);
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .grafico-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .card-grafico {
+            background: var(--white);
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        @media (max-width: 900px) {
+            .grafico-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h1>Análise de Desempenho</h1>
+        <a href="/dashboard_professor" class="btn-voltar">← Voltar ao Dashboard</a>
+    </div>
+
+    <div class="filtros">
+        <div class="filtro-grupo">
+            <label for="turmaSelect">Turma (Ano Letivo)</label>
+            <select id="turmaSelect" onchange="atualizarGraficos()">
+                {% for turma in turmas %}
+                <option value="{{ turma }}">{{ turma }}º Ano</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label for="materiaSelect">Matéria</label>
+            <select id="materiaSelect" onchange="atualizarGraficos()">
+                {% for materia in materias %}
+                <option value="{{ materia }}">{{ materia.replace('_', ' ') }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label for="alunoSelect">Aluno Específico</label>
+            <select id="alunoSelect" onchange="atualizarGraficoAluno()">
+                </select>
+        </div>
+    </div>
+
+    <div class="grafico-container">
+        <div class="card-grafico">
+            <h2>Média da Turma</h2>
+            <canvas id="graficoTurma"></canvas>
+        </div>
+        <div class="card-grafico">
+            <h2>Desempenho Individual</h2>
+            <canvas id="graficoAluno"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Define os rótulos do eixo X dos gráficos (ex: bimestres ou etapas de avaliação)
+    const labels = ["AB1.1", "AB1.2", "AB2.1", "AB2.2"];
+    
+    // Recebe os dados do backend (provavelmente usando um template engine como Jinja/Flask) 
+    // e os converte com segurança em um objeto JavaScript
+    const dados = JSON.parse('{{ dados | tojson | safe }}');
+    
+    // Variáveis globais para armazenar as instâncias dos gráficos do Chart.js.
+    // Isso é necessário para podermos "destruí-los" antes de criar novos, evitando sobreposição.
+    let graficoTurma;
+    let graficoAluno;
+
+    // Função principal que atualiza o gráfico da turma e a lista de alunos
+    function atualizarGraficos() {
+        // Captura os valores atuais selecionados nos elementos <select> da página HTML
+        const turma = document.getElementById("turmaSelect").value;
+        const materia = document.getElementById("materiaSelect").value;
+        const selectAluno = document.getElementById("alunoSelect");
+        
+        // Limpa o dropdown de alunos para evitar duplicação ao trocar de turma/matéria
+        selectAluno.innerHTML = "";
+
+        // Validação de segurança: Verifica se a combinação de turma e matéria possui dados
+        if (!dados[turma] || !dados[turma][materia] || Object.keys(dados[turma][materia]).length === 0) {
+            // Se não houver dados, destrói os gráficos existentes
+            if (graficoTurma) graficoTurma.destroy();
+            if (graficoAluno) graficoAluno.destroy();
+            // Mostra uma mensagem padrão no dropdown de alunos e encerra a função
+            selectAluno.innerHTML = "<option>Sem dados</option>";
+            return;
+        }
+
+        // Extrai os dados específicos da turma e matéria selecionadas
+        const alunosData = dados[turma][materia];
+        const nomesAlunos = Object.keys(alunosData); // Cria um array apenas com os nomes dos alunos
+
+        // Preenche o dropdown (selectAluno) dinamicamente com os nomes encontrados
+        nomesAlunos.forEach(nome => {
+            let op = document.createElement("option");
+            op.value = nome;
+            op.text = nome;
+            selectAluno.appendChild(op);
+        });
+
+        // --- Início do Cálculo da Média da Turma ---
+        let medias = [0, 0, 0, 0]; // Array inicial para somar as notas das 4 avaliações
+        
+        // Percorre todos os alunos para somar as notas
+        nomesAlunos.forEach(nome => {
+            const notas = alunosData[nome];
+            for (let i = 0; i < 4; i++) {
+                // Soma a nota atual. O '|| 0' previne erros caso alguma nota falte (seja null/undefined)
+                medias[i] += (notas[i] || 0); 
+            }
+        });
+
+        // Divide a soma total pelo número de alunos para obter a média, fixando em 1 casa decimal
+        medias = medias.map(m => (m / nomesAlunos.length).toFixed(1));
+        // --- Fim do Cálculo ---
+
+        // Destrói o gráfico de turma antigo (se existir) para liberar a tag <canvas>
+        if (graficoTurma) graficoTurma.destroy();
+        
+        // Cria um novo gráfico de Linha (line) para mostrar a evolução da média da turma
+        graficoTurma = new Chart(document.getElementById("graficoTurma"), {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Média da Turma",
+                    data: medias, // Passa o array de médias calculado acima
+                    borderColor: "#3498db", // Cor da linha (azul)
+                    backgroundColor: "rgba(52, 152, 219, 0.1)", // Cor de preenchimento abaixo da linha
+                    fill: true, // Habilita o preenchimento de fundo
+                    tension: 0.3 // Suaviza as curvas da linha (0 é reto, valores maiores deixam curvo)
+                }]
+            },
+            // Configura o eixo Y para começar do 0 e ter valor máximo de 10
+            options: { scales: { y: { beginAtZero: true, max: 10 } } } 
+        });
+
+        // Como a lista de alunos foi atualizada, chama a função para renderizar o gráfico do primeiro aluno
+        atualizarGraficoAluno();
+    }
+
+    // Função responsável por atualizar exclusivamente o gráfico individual do aluno selecionado
+    function atualizarGraficoAluno() {
+        // Captura os valores selecionados
+        const turma = document.getElementById("turmaSelect").value;
+        const materia = document.getElementById("materiaSelect").value;
+        const aluno = document.getElementById("alunoSelect").value;
+
+        // Validação de segurança dupla (impede erros se a função for chamada em momento indevido)
+        if (!dados[turma] || !dados[turma][materia] || !dados[turma][materia][aluno]) return;
+
+        // Pega apenas as notas do aluno selecionado
+        const notas = dados[turma][materia][aluno];
+
+        // Destrói o gráfico de aluno antigo (se existir)
+        if (graficoAluno) graficoAluno.destroy();
+        
+        // Cria um novo gráfico de Barras (bar) para o aluno
+        graficoAluno = new Chart(document.getElementById("graficoAluno"), {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Notas de ${aluno}`,
+                    data: notas, // Array direto de notas do aluno
+                    backgroundColor: "#2ecc71", // Cor das barras (verde)
+                    borderRadius: 5 // Arredonda os cantos superiores das barras
+                }]
+            },
+            // Configura o eixo Y mantendo o padrão de 0 a 10
+            options: { scales: { y: { beginAtZero: true, max: 10 } } }
+        });
+    }
+
+    // Event listener que dispara a função atualizarGraficos assim que a janela (página) termina de carregar.
+    // Isso garante que os gráficos não fiquem em branco quando o usuário abre a tela pela primeira vez.
+    window.onload = atualizarGraficos;
+</script>
+
+</body>
+</html>

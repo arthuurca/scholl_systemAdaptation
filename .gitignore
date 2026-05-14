@@ -1,0 +1,79 @@
+# Arquivos de Ajuda e Documentação Interna
+ARQUIVOS_ALTERADOS.md
+IMPLEMENTACAO_SINGLETON.txt
+SINGLETON_README.md
+exemplo_singleton.py
+
+# Banco de dados
+*.db
+*.sqlite
+*.sqlite3
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDEs e Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Pasta de uploads
+static/uploads/
+uploads/
+
+# Logs
+*.log
+logs/
+
+# Teste e Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node (se houver)
+node_modules/
+npm-debug.log
+
+# Temporários
+*.tmp
+.tmp/
+temp/
+*.bak
