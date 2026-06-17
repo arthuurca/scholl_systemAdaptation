@@ -1,22 +1,23 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
+from sistema_facade import SistemaFacade
 from models.aluno import Aluno
 from models.professor import Professor
 from models.notas import Nota
 from models.visualizador_desempenho import DesempenhoAluno, DesempenhoProfessor
 import os
 import glob
-# PADRÃO SINGLETON: Importação do gerenciador de banco de dados com Singleton
 from singleton_database import get_database
 
 app = Flask(__name__)
 
 app.secret_key = "sistema_escolar"
 
+facade = SistemaFacade()
 
-# PADRÃO SINGLETON: Função conectar() agora usa o padrão Singleton
+
 def conectar():
-    # PADRÃO SINGLETON: Obtém a instância única do banco de dados
+    #Obtém a instância única do banco de dados
     db = get_database()
     return db.get_connection()
 
@@ -132,20 +133,11 @@ def login():
         cpf = request.form["cpf"]
         senha = request.form["senha"]
 
-        conn = conectar()
-        cursor = conn.cursor()
+        usuario_db = facade.autenticar_usuario(
+                        cpf,
+                        senha
+        )
 
-        # Busca no banco de dados se existe um usuário com este CPF e senha
-        cursor.execute("""
-        SELECT * FROM usuarios
-        WHERE cpf=? AND senha=?
-        """,(cpf,senha))
-
-        usuario_db = cursor.fetchone()
-
-        conn.close()
-
-        # Verifica se o usuário foi encontrado no banco
         # Verifica se o usuário foi encontrado no banco
         if usuario_db:
             
