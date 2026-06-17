@@ -1,17 +1,3 @@
-# ============================================================================
-# PADRÃO SINGLETON IMPLEMENTADO
-# ============================================================================
-# Este arquivo foi criado para gerenciar a conexão com o banco de dados 
-# usando o padrão Singleton. O padrão Singleton garante que apenas uma 
-# única instância da classe Database exista em toda a aplicação.
-#
-# BENEFÍCIOS:
-# ✅ Uma única conexão com o banco de dados em toda a aplicação
-# ✅ Menor consumo de memória
-# ✅ Melhor performance
-# ✅ Thread-safe (seguro para múltiplas threads)
-# ✅ Consistência de dados
-# ============================================================================
 
 import sqlite3
 from threading import Lock
