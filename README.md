@@ -98,3 +98,12 @@ Essa técnica deixa o código do app.py muito mais limpo, pois o servidor não p
 * **Framework Web:** Flask
 * **Banco de Dados:** SQLite3 (Relacional)
 * **Frontend:** HTML5, CSS3 (Sticky tables) e Jinja2.
+---
+## 🏗️ Padrões de Projeto Utilizados
+
+* **Singleton:** Garante que exista apenas uma única instância da conexão com o banco de dados, permitindo acesso global e evitando múltiplas conexões desnecessárias.
+
+* **Facade:** Fornece uma interface simplificada para acessar funcionalidades do sistema, reduzindo a complexidade e o acoplamento entre os módulos.
+
+* **Memento:** Permite salvar e restaurar estados anteriores de um objeto, possibilitando a recuperação de informações após alterações.
+
